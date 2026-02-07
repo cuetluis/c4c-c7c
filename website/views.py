@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, flash, request, redirect, url_for
 from flask_login import login_required, current_user
-from .models import Note
-from . import db
+from . import Note
+from .. import db
 import json
 import jsonify
 
