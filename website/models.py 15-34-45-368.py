@@ -1,153 +1,120 @@
-import bson
+from . import db
+from flask_login import UserMixin
+from sqlalchemy.sql import func
 import datetime
-from dataclasses import dataclass, asdict
 
-from flask import current_app, g
-from werkzeug.local import LocalProxy
-from flask_pymongo import PyMongo
+class User(db.Model, UserMixin):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    admin = db.Column(db.Boolean)
+    editor = db.Column(db.Boolean)
+    viewer = db.Column(db.Boolean)
+    active = db.Column(db.Boolean)
+    phone = db.Column(db.String)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-from pymongo.errors import DuplicateKeyError, OperationFailure
-from bson.objectid import ObjectId
-from bson.errors import InvalidId
+    documents = db.relationship('Document')
 
+class Horse(db.Model):
+    __tablename__ = 'horses'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    biography = db.Column(db.String)
+    birth_year = db.Column(db.Integer)
+    arrival_date = db.Column(db.DateTime)
+    breed = db.Column(db.String)
+    gender = db.Column(db.String)
+    seen_by_vet = db.Column(db.Boolean)
+    seen_by_farrier = db.Column(db.Boolean)
+    service_horse = db.Column(db.Boolean)
+    ex_race_horse = db.Column(db.Boolean)
+    deceased = db.Column(db.Boolean)
+    death_date = db.Column(db.DateTime)
+    grooming_day = db.Column(db.String)
+    pasture = db.Column(db.String)
+    behavior_notes = db.Column(db.Text)
+    regular_treatment = db.Column(db.Boolean)
+    medical_notes = db.Column(db.Text)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-def get_db():
-    """
-    Configuration method to return db instance
-    """
-    db = getattr(g, "_database", None)
+    user_id = db.Column(db.Int, db.ForeignKey('user.id'))
 
-    if db is None:
+    # medical
+    left_eye = db.Column(db.String)
+    right_eye = db.Column(db.String)
+    heart_murmur = db.Column(db.Boolean)
+    cushings_positive = db.Column(db.Boolean)
+    heaves = db.Column(db.Boolean)
+    anhidrosis = db.Column(db.Boolean)
+    shivers = db.Column(db.Boolean)
 
-        db = g._database = PyMongo(current_app).db
-       
-    return db
+    # behavior
+    bites = db.Column(db.Boolean)
+    kicks = db.Column(db.Boolean)
+    difficult_to_catch = db.Column(db.Boolean)
+    problem_with_needles = db.Column(db.Boolean)
+    problem_with_farrier = db.Column(db.Boolean)
+    sedation_for_farrier = db.Column(db.Boolean)
 
-db = LocalProxy(get_db)
+    # feeding
+    requires_extra_feed = db.Column(db.Boolean)
+    requires_mash = db.Column(db.Boolean)
 
-def add_user(name: str, admin: bool, editor: bool, viewer: bool, active: bool, phone: str, updated_at: datetime):
-    user = {
-            'name': name,
-            'admin': admin,
-            'editor': editor,
-            'viewer': viewer,
-            'active': active,
-            'phone': phone,
-            'updated_at': updated_at
-           }
-    return db.users.insert_one(user)
+    # relationship
+    treatments = db.relationship('Treatment')
+    documents = db.relationship('Document')
 
-def add_treatment(treatment_type: str, frequency: str, updated_at: datetime, user_id: str):
-    log = {
-        'treatment_type': treatment_type,
-        'frequency': frequency,
-        'updated_at': updated_at,
-        'user_id': user_id
-    }
-    return db.treatment_logs.insert_one(log)
+class Treatment(db.Model):
+    __tablename__ = 'treatment_types'
+    id = db.Column(db.Integer, primary_key=True)
+    frequency = db.Column(db.String, default="N/A")
+    treatment_name = db.Column(db.String)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-@dataclass
-class Medical():
-    left_eye: str
-    right_eye: str 
-    image_url: str
-    heart_murmur: bool
-    cushings_positive: bool
-    heaves: bool
-    bites: bool
-    kicks: bool
-    anhidrosis: bool
-    shivers: bool
-        
-@dataclass
-class Behavior():
-    bites: bool
-    kicks: bool 
-    difficult_to_catch: bool
-    problem_with_needles: bool 
-    problem_with_farrier: bool
-    sedation_for_farrier: bool
+    horse_id = db.Column(db.Integer, db.ForeignKey('horses.id'))
 
-@dataclass
-class Feeding():
-    requires_extra_feed: bool
-    requires_mash: bool
+class Document(db.Model):
+    __tablename__ = 'horse_documents'
 
-@dataclass
-class Horse():
-    name: str
-    biography: str
-    birth_year: int
-    arrival_date: datetime
-    breed: str
-    gender: str
-    seen_by_vet: bool
-    seen_by_farrier: bool
-    service_horse: bool
-    ex_race_horse: bool
-    deceased: bool
-    death_date: datetime
-    grooming_day: str
-    pasture: str
-    medical_notes: str
-    updated_at: datetime
-    user_update: int
-    medical_info: Medical
+    id = db.Column(db.Integer, primary_key=True)
 
+    image_url = db.Column(db.String)
+    description = db.Column(db.Text)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-def add_horse(horse: Horse):
-    entry = asdict(horse)
-    return db.horses.insert_one(horse)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    horse_id = db.Column(db.Integer, db.ForeignKey('horses.id'))
 
-def add_service_record(seen_by_vet: bool, 
-                      schedule_days: list, 
-                      notes: str, 
-                      observations: str, 
-                      military_police_horse: bool):
-    record = {
-        'seen_by_vet': seen_by_vet,
-        'schedule_days': schedule_days,
-        'notes': notes,
-        'observations': observations,
-        'military_police_horse': military_police_horse
-    }
-    
-    return db.service_records.insert_one(record)
+class TreatmentAction(db.Model):
+    __tablename__ = 'treatment_actions'
 
-def add_horse_document(horse_id: str, 
-                       image_url: str,
-                       description: str, 
-                       last_updated: datetime, 
-                       user_id: str):
-    document = {
-        'horse_id': horse_id,
-        'image_url': image_url,
-        'description': description,
-        'last_updated': last_updated,
-        'user_id': user_id
-    }
+    id = db.Column(db.Integer, primary_key=True)
+    horse_id = db.Column(db.Integer, db.ForeignKey('horses.id'), nullable=False)
+    treatment_type = db.Column(db.String)
+    action_taken = db.Column(db.String)
+    notes = db.Column(db.String)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    return db.horse_documents.insert_one(document)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
-def add_horse_document(horse_id: str, 
-                       treatment: str,
-                       description: str, 
-                       last_updated: datetime, 
-                       user_id: str):
-    document = {
-        'horse_id': horse_id,
-        'treatment': treatment,
-        'description': description,
-        'last_updated': last_updated,
-        'user_id': user_id
-    }
+class DailyObservation(db.Model):
+    __tablename__ = 'observations'
+    id = db.Column(db.Integer, primary_key=True)
+    notes = db.Column(db.String)
+    to_do = db.Column(db.Boolean)
+    done = db.Column(db.Boolean)
+    notify = db.Column(db.Boolean)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    return db.actions_taken.insert_one(document)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-def add_daily_observation(notes: str,
-                          to_do: bool,
-                          done: bool,
-                          notify: bool,
-                          updated_at: datetime,
-                          user_id: str):
-    
+class AuditLog(db.Model):
+    __tablename__ = 'audit_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    table_changed = db.Column(db.String)
+    field_changed = db.Column(db.String)
+    before_value = db.Column(db.String)
+    after_value = db.Column(db.String)
