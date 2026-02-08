@@ -9,6 +9,7 @@ auth = Blueprint('auth', __name__)
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
+    response = {'message': 'Please log in', 'category': 'info'}
     if request.method == 'POST':
         email = request.get_json().get('email')
         password = request.get_json().get('password')
@@ -26,7 +27,7 @@ def login():
     return jsonify(response)
 
 @auth.route('/logout')
-@login_required
+#@login_required
 def logout():
     logout_user()
     return redirect(url_for('auth_login'))
@@ -55,7 +56,7 @@ def sign_up():
             new_user = User(email=email, name=name, password = generate_password_hash(password1, method='scrypt'))
             db.session.add(new_user)
             db.session.commit()
-            login_user(current_user, remember=True)
+            login_user(new_user, remember=True)
             response = {'message': 'Accounted created!', 'category': 'success'}
         
     return jsonify(response)

@@ -1,8 +1,9 @@
 import React, { createContext, useState, useCallback } from 'react';
+import { API_URL } from '../config/APIURL'
 
 export const AuthContext = createContext({
     isLoggedIn: false,
-    registration: async (email, name, password1, password2) => ({success : false, message : ''}),
+    registration: async (email, name, password1, password2) => ({success : false, message : 'Default fallback.'}),
     login: async (email, password) => ({success : false, message : ''}),
     logout: () => {}
   });
@@ -12,7 +13,7 @@ const [isLoggedIn, setIsLoggedIn] = useState(false);
 
 const loginHandler = useCallback(async (email, password) => {
     try {
-        const response = await fetch('http://127.0.0.1:8000/login', {
+        const response = await fetch(`${API_URL}/login`, {
             method: 'POST',
             headers: {
             'Content-Type': 'application/json',
@@ -34,19 +35,22 @@ const loginHandler = useCallback(async (email, password) => {
 }, []);
 
 const registrationHandler = useCallback(async (email, name, password1, password2) => {
+    console.log("Handler triggered with:", email);
     try {
-        const response = await fetch('http://127.0.0.1:8000/signup', {
+        const response = await fetch(`${API_URL}/signup`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ email, name, password1, password2 }),
         });
+
         const data = await response.json();
+        console.log("Server response:", data);
 
         if (data.category == "success") {
             setIsLoggedIn(true);
-            return {success : true, message: "Succeeded in signing up!"} ;
+            return {success : true, message: "Succeeded in signing up!"};
         } else {
             return {success : false, message: "Failure to sign up"} ;
         }
@@ -54,7 +58,7 @@ const registrationHandler = useCallback(async (email, name, password1, password2
     catch (err) {
         return {success : false, message: "Connection failed"}
     }
-});
+}, []);
 
 const logoutHandler = useCallback(() => {
     setIsLoggedIn(false);

@@ -1,115 +1,295 @@
-from . import db
-from flask_login import UserMixin
-from dataclasses import dataclass
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Text
-from sqlalchemy.orm import declarative_base, relationship, Mapped, mapped_column
 import datetime
+from typing import List, Optional
+from dataclasses import dataclass
+
+from sqlalchemy import Integer, String, Boolean, DateTime, Text, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from flask_login import UserMixin
+
+from . import db
+
+# ==========================================
+# CORE ENTITIES (User & Horse)
+# ==========================================
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, default="")
-    password = db.Column(db.String, default="")
-    admin = db.Column(db.Boolean, default=False)
-    editor = db.Column(db.Boolean, default=False)
-    viewer = db.Column(db.Boolean, default=True)
-    active = db.Column(db.Boolean, default=True)
-    phone = db.Column(db.String, default="")
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc)) 
-    documents = db.relationship('Document')
 
-@dataclass
+    # --- Identity & Auth ---
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, unique=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String, default="")
+    phone: Mapped[str] = mapped_column(String, default="")
+
+    # --- Permissions ---
+    admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    editor: Mapped[bool] = mapped_column(Boolean, default=False)
+    viewer: Mapped[bool] = mapped_column(Boolean, default=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # --- Timestamps ---
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, 
+        default=lambda: datetime.datetime.now(datetime.timezone.utc), 
+        onupdate=lambda: datetime.datetime.now(datetime.timezone.utc)
+    )
+
+    # --- Relationships ---
+    documents: Mapped[List["Document"]] = relationship('Document', back_populates="user")
+    actions: Mapped[List["TreatmentAction"]] = relationship('TreatmentAction', back_populates="user")
+    observations: Mapped[List["DailyObservation"]] = relationship('DailyObservation', back_populates="user")
+    audit_logs: Mapped[List["AuditLog"]] = relationship('AuditLog', back_populates="user")
+    horses: Mapped[List["Horse"]] = relationship('Horse', back_populates="assigned_user")
+
+
 class Horse(db.Model):
     __tablename__ = 'horses'
-    id: int = db.Column(db.Integer, primary_key=True)
-    name: str = db.Column(db.String, default="Unknown Horse")
-    biography: str = db.Column(db.String, default="")
-    birth_year: int = db.Column(db.Integer)
-    arrival_date: datetime = db.Column(db.DateTime)
-    breed: str = db.Column(db.String, default="Unknown")
-    gender: str = db.Column(db.String, default="Unknown")
-    seen_by_vet: bool = db.Column(db.Boolean, default=False)
-    seen_by_farrier: bool = db.Column(db.Boolean, default=False)
-    service_horse: bool = db.Column(db.Boolean, default=False)
-    ex_race_horse: bool = db.Column(db.Boolean, default=False)
-    deceased: bool = db.Column(db.Boolean, default=False)
-    death_date: datetime = db.Column(db.DateTime)
-    grooming_day: str = db.Column(db.String, default="")
-    pasture: str = db.Column(db.String, default="")
-    behavior_notes: str = db.Column(db.Text, default="")
-    regular_treatment: bool = db.Column(db.Boolean, default=False)
-    medical_notes: str = db.Column(db.Text, default="")
-    updated_at: datetime = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc)) 
-    user_id: int = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    # medical
-    left_eye: str = db.Column(db.String, default="Normal")
-    right_eye: str = db.Column(db.String, default="Normal")
-    heart_murmur: bool = db.Column(db.Boolean, default=False)
-    cushings_positive: bool = db.Column(db.Boolean, default=False)
-    heaves: bool = db.Column(db.Boolean, default=False)
-    anhidrosis: bool = db.Column(db.Boolean, default=False)
-    shivers: bool = db.Column(db.Boolean, default=False)
+    # --- Identity & Bio ---
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, unique=True)
+    name: Mapped[str] = mapped_column(String, default="Unknown Horse")
+    biography: Mapped[str] = mapped_column(String, default="")
+    breed: Mapped[str] = mapped_column(String, default="Unknown")
+    gender: Mapped[str] = mapped_column(String, default="Unknown")
+    birth_year: Mapped[Optional[int]] = mapped_column(Integer)
+    
+    # --- Status Flags ---
+    deceased: Mapped[bool] = mapped_column(Boolean, default=False)
+    death_date: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    active_service: Mapped[bool] = mapped_column(Boolean, default=False) # Renamed or mapped to existing if needed? Kept 'service_horse' below to match source.
+    service_horse: Mapped[bool] = mapped_column(Boolean, default=False)
+    ex_race_horse: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    # --- Management ---
+    arrival_date: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    grooming_day: Mapped[str] = mapped_column(String, default="")
+    pasture: Mapped[str] = mapped_column(String, default="")
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('users.id'))
 
-    # behavior
-    bites: bool = db.Column(db.Boolean, default=False)
-    kicks: bool = db.Column(db.Boolean, default=False)
-    difficult_to_catch: bool = db.Column(db.Boolean, default=False)
-    problem_with_needles: bool = db.Column(db.Boolean, default=False)
-    problem_with_farrier: bool = db.Column(db.Boolean, default=False)
-    sedation_for_farrier: bool = db.Column(db.Boolean, default=False)
+    # --- Medical Profile ---
+    regular_treatment: Mapped[bool] = mapped_column(Boolean, default=False)
+    seen_by_vet: Mapped[bool] = mapped_column(Boolean, default=False)
+    seen_by_farrier: Mapped[bool] = mapped_column(Boolean, default=False)
+    medical_notes: Mapped[str] = mapped_column(Text, default="")
+    
+    # Specific Conditions
+    left_eye: Mapped[str] = mapped_column(String, default="Normal")
+    right_eye: Mapped[str] = mapped_column(String, default="Normal")
+    heart_murmur: Mapped[bool] = mapped_column(Boolean, default=False)
+    cushings_positive: Mapped[bool] = mapped_column(Boolean, default=False)
+    heaves: Mapped[bool] = mapped_column(Boolean, default=False)
+    anhidrosis: Mapped[bool] = mapped_column(Boolean, default=False)
+    shivers: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    # feeding
-    requires_extra_feed: bool = db.Column(db.Boolean, default=False)
-    requires_mash: bool = db.Column(db.Boolean, default=False)
+    # --- Behavior Profile ---
+    behavior_notes: Mapped[str] = mapped_column(Text, default="")
+    bites: Mapped[bool] = mapped_column(Boolean, default=False)
+    kicks: Mapped[bool] = mapped_column(Boolean, default=False)
+    difficult_to_catch: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    # Handling Sensitivities
+    problem_with_needles: Mapped[bool] = mapped_column(Boolean, default=False)
+    problem_with_farrier: Mapped[bool] = mapped_column(Boolean, default=False)
+    sedation_for_farrier: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    # relationship
-    treatments = db.relationship('Treatment')
-    documents = db.relationship('Document')
+    # --- Feeding ---
+    requires_extra_feed: Mapped[bool] = mapped_column(Boolean, default=False)
+    requires_mash: Mapped[bool] = mapped_column(Boolean, default=False)
 
-class Treatment(db.Model):
-    __tablename__ = 'treatment_types'
-    id: int = db.Column(db.Integer, primary_key=True)
-    frequency: str = db.Column(db.String, default="N/A")
-    treatment_name: str = db.Column(db.String, default="")
-    updated_at: datetime = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc)) 
-    horse_id: int = db.Column(db.Integer, db.ForeignKey('horses.id'))
+    # --- Timestamps ---
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, 
+        default=lambda: datetime.datetime.now(datetime.timezone.utc), 
+        onupdate=lambda: datetime.datetime.now(datetime.timezone.utc)
+    )
 
-class Document(db.Model):
-    __tablename__ = 'horse_documents'
-    id: int = db.Column(db.Integer, primary_key=True)
-    image_url: str = db.Column(db.String, default="")
-    description: str = db.Column(db.Text, default="")
-    updated_at: datetime = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc)) 
-    user_id: int = db.Column(db.Integer, db.ForeignKey('users.id'))
-    horse_id: int = db.Column(db.Integer, db.ForeignKey('horses.id'))
+    # --- Relationships ---
+    assigned_user: Mapped["User"] = relationship("User", back_populates="horses")
+    treatments: Mapped[List["Treatment"]] = relationship('Treatment', back_populates="horse")
+    documents: Mapped[List["Document"]] = relationship('Document', back_populates="horse")
+    actions: Mapped[List["TreatmentAction"]] = relationship('TreatmentAction', back_populates="horse")
+
+    def to_dict(self):
+        return {
+            # --- Basic Info ---
+            "id": self.id,
+            "name": self.name,
+            "biography": self.biography,
+            "arrival_date": self.arrival_date.isoformat() if self.arrival_date else None,
+            
+            # --- Status ---
+            "deceased": self.deceased,
+            "service_horse": self.service_horse,
+            
+            # --- Medical Summary ---
+            "medical": {
+                "notes": self.medical_notes,
+                "regular_treatment": self.regular_treatment,
+                "conditions": {
+                     "cushings": self.cushings_positive,
+                     "heaves": self.heaves
+                }
+            }
+        }
+
+
+# ==========================================
+# OPERATIONAL LOGS & ACTIONS
+# ==========================================
 
 class TreatmentAction(db.Model):
     __tablename__ = 'treatment_actions'
-    id: int = db.Column(db.Integer, primary_key=True)
-    horse_id: int = db.Column(db.Integer, db.ForeignKey('horses.id'), nullable=False)
-    treatment_type: str = db.Column(db.String, default="")
-    action_taken: str = db.Column(db.String, default="")
-    notes: str = db.Column(db.String, default="")
-    updated_at: datetime = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc)) 
-    user_id: int = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    horse_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('horses.id'))
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('users.id'))
+    
+    treatment_type: Mapped[str] = mapped_column(String, default="")
+    action_taken: Mapped[str] = mapped_column(String, default="")
+    notes: Mapped[str] = mapped_column(String, default="")
+    
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, 
+        default=lambda: datetime.datetime.now(datetime.timezone.utc), 
+        onupdate=lambda: datetime.datetime.now(datetime.timezone.utc)
+    )
+
+    # Relationships
+    horse: Mapped["Horse"] = relationship("Horse", back_populates="actions")
+    user: Mapped["User"] = relationship("User", back_populates="actions")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "treatment_type": self.treatment_type,
+            "actions_taken": self.action_taken,
+            "notes": self.notes,
+            "created_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+
 
 class DailyObservation(db.Model):
     __tablename__ = 'observations'
-    id: int = db.Column(db.Integer, primary_key=True)
-    notes: str = db.Column(db.String, default="")
-    to_do: bool = db.Column(db.Boolean, default=False)
-    done: bool = db.Column(db.Boolean, default=False)
-    notify: bool = db.Column(db.Boolean, default=False)
-    updated_at: datetime = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
-    user_id: int = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('users.id'))
+    
+    notes: Mapped[str] = mapped_column(String, default="")
+    to_do: Mapped[bool] = mapped_column(Boolean, default=False)
+    done: Mapped[bool] = mapped_column(Boolean, default=False)
+    notify: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, 
+        default=lambda: datetime.datetime.now(datetime.timezone.utc), 
+        onupdate=lambda: datetime.datetime.now(datetime.timezone.utc)
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="observations")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "notes": self.notes,
+            "to_do": self.to_do,
+            "done": self.done,
+            "notify": self.notify,
+            "created_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+# ==========================================
+# SUPPORTING TABLES & ASSETS
+# ==========================================
+
+@dataclass
+class Treatment(db.Model):
+    __tablename__ = 'treatment_types'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    horse_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('horses.id'))
+    
+    treatment_name: Mapped[str] = mapped_column(String, default="")
+    frequency: Mapped[str] = mapped_column(String, default="N/A")
+    
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, 
+        default=lambda: datetime.datetime.now(datetime.timezone.utc), 
+        onupdate=lambda: datetime.datetime.now(datetime.timezone.utc)
+    )
+
+    # Relationships
+    horse: Mapped["Horse"] = relationship("Horse", back_populates="treatments")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "treatment_name": self.treatment_name,
+            "frequency": self.frequency,
+            # Do NOT return self.horse here
+        }
+
+
+@dataclass
+class Document(db.Model):
+    __tablename__ = 'horse_documents'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('users.id'))
+    horse_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('horses.id'))
+    
+    image_url: Mapped[str] = mapped_column(String, default="")
+    description: Mapped[str] = mapped_column(Text, default="")
+    
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, 
+        default=lambda: datetime.datetime.now(datetime.timezone.utc), 
+        onupdate=lambda: datetime.datetime.now(datetime.timezone.utc)
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="documents")
+    horse: Mapped["Horse"] = relationship("Horse", back_populates="documents")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "image_url": self.image_url,
+            "description": self.description,
+            "created_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+
 
 class AuditLog(db.Model):
     __tablename__ = 'audit_logs'
-    id: int = db.Column(db.Integer, primary_key=True)
-    updated_at: datetime = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
-    user_id: int = db.Column(db.Integer, db.ForeignKey('users.id'))
-    table_changed: str = db.Column(db.String, default="")
-    field_changed: str = db.Column(db.String, default="")
-    before_value: str = db.Column(db.String, default="")
-    after_value: str = db.Column(db.String, default="")
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('users.id'))
+    
+    table_changed: Mapped[str] = mapped_column(String, default="")
+    field_changed: Mapped[str] = mapped_column(String, default="")
+    before_value: Mapped[str] = mapped_column(String, default="")
+    after_value: Mapped[str] = mapped_column(String, default="")
+    
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, 
+        default=lambda: datetime.datetime.now(datetime.timezone.utc), 
+        onupdate=lambda: datetime.datetime.now(datetime.timezone.utc)
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="audit_logs")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "table_changed": self.table_changed,
+            "field_changed": self.field_changed,
+            "before_value": self.before_value,
+            "after_value": self.after_value,
+            "timestamp": self.updated_at.isoformat() if self.updated_at else None
+        }
