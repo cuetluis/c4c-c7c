@@ -1,7 +1,8 @@
 from . import db
 from flask_login import UserMixin
 from dataclasses import dataclass
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import declarative_base, relationship, Mapped, mapped_column
 import datetime
 
 class User(db.Model, UserMixin):
@@ -13,13 +14,49 @@ class User(db.Model, UserMixin):
     viewer = db.Column(db.Boolean)
     active = db.Column(db.Boolean)
     phone = db.Column(db.String)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.datetime.now) 
 
     documents = db.relationship('Document')
 
 @dataclass
 class Horse(db.Model):
     __tablename__ = 'horses'
+    id: int
+    name: str
+    biography: str
+    birth_year: int
+    arrival_date: datetime
+    breed: str
+    gender: str
+    seen_by_vet: bool
+    seen_by_farrier: bool
+    service_horse: bool
+    ex_race_horse: bool
+    deceased: bool
+    death_date: datetime
+    grooming_day: str
+    pasture: str
+    behavior_notes: str
+    regular_treatment: bool
+    medical_notes: str
+    updated_at: datetime
+    user_id: int
+    left_eye: str
+    right_eye: str
+    heart_murmur: bool
+    cushings_positive: bool
+    heaves: bool
+    anhidrosis: bool
+    shivers: bool
+    bites: bool
+    kicks: bool
+    difficult_to_catch: bool
+    problem_with_needles: bool
+    problem_with_farrier: bool
+    sedation_for_farrier: bool
+    requires_extra_feed: bool
+    requires_mash: bool
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     biography = db.Column(db.String)
@@ -38,9 +75,9 @@ class Horse(db.Model):
     behavior_notes = db.Column(db.Text)
     regular_treatment = db.Column(db.Boolean)
     medical_notes = db.Column(db.Text)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.datetime.now) 
 
-    user_id = db.Column(db.Int, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     # medical
     left_eye = db.Column(db.String)
@@ -72,7 +109,7 @@ class Treatment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     frequency = db.Column(db.String, default="N/A")
     treatment_name = db.Column(db.String)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.datetime.now) 
 
     horse_id = db.Column(db.Integer, db.ForeignKey('horses.id'))
 
@@ -83,7 +120,7 @@ class Document(db.Model):
 
     image_url = db.Column(db.String)
     description = db.Column(db.Text)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.datetime.now) 
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     horse_id = db.Column(db.Integer, db.ForeignKey('horses.id'))
@@ -96,7 +133,7 @@ class TreatmentAction(db.Model):
     treatment_type = db.Column(db.String)
     action_taken = db.Column(db.String)
     notes = db.Column(db.String)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.datetime.now) 
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
@@ -107,14 +144,14 @@ class DailyObservation(db.Model):
     to_do = db.Column(db.Boolean)
     done = db.Column(db.Boolean)
     notify = db.Column(db.Boolean)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.datetime.now(tz=datetime.UTC))
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
 class AuditLog(db.Model):
     __tablename__ = 'audit_logs'
     id = db.Column(db.Integer, primary_key=True)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.datetime.now(tz=datetime.UTC))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     table_changed = db.Column(db.String)
     field_changed = db.Column(db.String)
