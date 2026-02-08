@@ -14,6 +14,15 @@ const LoginScreen = () => {
   const {height} = useWindowDimensions();
   const {login} = useContext(AuthContext);
 
+  const handleLogin = async () => {
+    setError(''); // Clear previous errors
+    const result = await login(email, password);
+    
+    if (result && !result.success) {
+      setError(result.message);
+    }
+  };
+
   return (
     <View style={styles.root}>
       <FullScreenImageScreen />
@@ -32,7 +41,7 @@ const LoginScreen = () => {
         secureTextEntry={true}
       />
 
-      <Button text = "Log In" onPress = { login }  />
+      <Button text = "Log In" onPress = { handleLogin }  />
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
