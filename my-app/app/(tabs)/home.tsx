@@ -1,15 +1,7 @@
 import React from 'react';
-import {Text, View, Button, Pressable, Image, StyleSheet} from "react-native";
+import {Text, Pressable, Image, StyleSheet} from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context'
-import FullScreenImageScreen from '../../components/fullscreen';
 import { useRouter } from 'expo-router';
-
-
-const imageSource = require('../../assets/images/horse.jpg');
-
-const handlePress = () => {
-    alert('Button Pressed!');
-};
 
 export default function Index() {
     const router = useRouter();
