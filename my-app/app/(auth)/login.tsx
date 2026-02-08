@@ -4,7 +4,8 @@ import Input from '../../components/Input'
 import Button from '../../components/Button'
 import { Link } from 'expo-router';
 import { AuthContext } from '../../context/AuthContext'
-import FullScreenImageScreen from '../../components/fullscreen'
+import FullWidthImage from '../../components/Fullscreen';
+import { useRouter } from 'expo-router';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
@@ -14,20 +15,26 @@ const LoginScreen = () => {
   const {height} = useWindowDimensions();
   const {login} = useContext(AuthContext);
 
+  const router = useRouter();
+
   const handleLogin = async () => {
     setError(''); // Clear previous errors
     const result = await login(email, password);
     
     if (result && !result.success) {
       setError(result.message);
-      alert("WOMP!")
+      alert("Error!")
+    } else if (result && result.success) {
+      router.replace('../(tabs)/home');
+    } else {
+      alert("No data received back!")
     }
   };
 
   return (
     <View style={styles.root}>
-      <FullScreenImageScreen />
-
+      <FullWidthImage />
+      <Text style={{fontSize: 30, fontWeight: 'bold'}}> Login </Text>
       <Input
         placeholder="Email"
         value={email}
@@ -42,13 +49,15 @@ const LoginScreen = () => {
         secureTextEntry={true}
       />
 
-      <Button text = "Log In" onPress = { handleLogin }  />
+      <Button text = "Submit" onPress = { handleLogin }  />
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <Link href="/(auth)/register" asChild>
         <TouchableOpacity style={styles.link}>
-          <Text>Don't have an account? <Text style={styles.linkText}>Sign Up</Text></Text>
+        <Text>
+          Don't have an account? <Text style={styles.linkText}>Sign up</Text>
+        </Text>
         </TouchableOpacity>
       </Link>
     </View>
