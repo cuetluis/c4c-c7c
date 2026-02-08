@@ -54,35 +54,34 @@ const AuditScreen = () => {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView horizontal={true} style={styles.scrollView}>
-        <View style={[styles.row, styles.header]}>
-          <View style={styles.cell}>
-            <Text style={styles.headerText}>User Id</Text>
+        <View>
+          <View style={[styles.row, styles.header]}>
+            <View style={styles.cell}>
+              <Text style={styles.headerText}>User Id</Text>
+            </View>
+            <View style={styles.cell}>
+              <Text style={styles.headerText}>Changed Table</Text>
+            </View>
+            <View style={styles.cell}>
+              <Text style={styles.headerText}>Field Changed</Text>
+            </View>
+            <View style={styles.cell}>
+              <Text style={styles.headerText}>Before Value</Text>
+            </View>
+            <View style={styles.cell}>
+              <Text style={styles.headerText}>After Value</Text>
+            </View>
+            <View style={styles.cell}>
+              <Text style={styles.headerText}>Timestamp</Text>
+            </View>
           </View>
-          <View style={styles.cell}>
-            <Text style={styles.headerText}>Changed Table</Text>
-          </View>
-          <View style={styles.cell}>
-            <Text style={styles.headerText}>Field Changed</Text>
-          </View>
-          <View style={styles.cell}>
-            <Text style={styles.headerText}>Field Changed</Text>
-          </View>
-          <View style={styles.cell}>
-            <Text style={styles.headerText}>Before Value</Text>
-          </View>
-          <View style={styles.cell}>
-            <Text style={styles.headerText}>After Value</Text>
-          </View>
-          <View style={styles.cell}>
-            <Text style={styles.headerText}>Timestamp</Text>
-          </View>
-        </View>
         
-        <FlatList
+          <FlatList
             data={data}
             renderItem={renderItem}
-            keyExtractor={(item) => item.id ? item.id.toString() : Math.random().toString()}
+            keyExtractor={(item) => item.id ? item.id.toString() : index.toString()}
           />
+        </View>
         </ScrollView>
       </SafeAreaView>
     );
@@ -103,13 +102,12 @@ const styles = StyleSheet.create({
   scrollView: {
       flex: 1,
   },
-  // 3. Define a specific width for rows that is wider than the screen
   row: {
     flexDirection: "row",
     borderBottomWidth: 1,
     borderColor: "#ccc",
     alignItems: 'flex-start',
-    width: 900, // <--- This forces the horizontal scroll
+    width: 900,
   },
   header: {
       backgroundColor: '#f1f1f1',
@@ -117,7 +115,7 @@ const styles = StyleSheet.create({
       borderTopColor: '#ccc',
   },
   cell: {
-    width: 150, // Fixed width per column helps alignment
+    width: 150,
     padding: 10,
   },
   headerText: {
