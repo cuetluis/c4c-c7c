@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, flash, request, redirect, url_for
 from flask_login import login_required, current_user
 from . import Note
 from .. import db
+from .models import Horse
+from random import randint, randrange
 import json
 import jsonify
 
@@ -34,3 +36,17 @@ def delete_note():
             db.session.commit()
     
     return jsonify({})
+
+@views.route('/get-horse/<horse_id>', methods=['POST'])
+@login_required
+def get_horse_data(horse_id):
+    horse = Horse.query.get(horse_id)
+    return jsonify(horse)
+
+@views.route('/add-horse', methods=['GET', 'POST'])
+@login_required
+def add_horse():
+    unique_id = randint(1000000000, 9999999999)
+    new_horse = Horse(id=unique_id)
+    db.session.add(new_horse)
+    db.session.commit()

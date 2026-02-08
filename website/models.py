@@ -1,5 +1,6 @@
 from . import db
 from flask_login import UserMixin
+from dataclasses import dataclass
 from sqlalchemy.sql import func
 import datetime
 
@@ -16,6 +17,7 @@ class User(db.Model, UserMixin):
 
     documents = db.relationship('Document')
 
+@dataclass
 class Horse(db.Model):
     __tablename__ = 'horses'
     id = db.Column(db.Integer, primary_key=True)
