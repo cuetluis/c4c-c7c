@@ -1,9 +1,10 @@
 import React, { useState, useContext } from 'react';
-import { View, TouchableOpacity, Image, Text, StyleSheet, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView} from 'react-native';
+import { useRouter, Link } from 'expo-router'
+import { View, StyleSheet, Text, TouchableOpacity} from 'react-native';
 import Input from '../../components/Input'
 import Button from '../../components/Button'
 import { AuthContext } from '../../context/AuthContext'
-import FullScreenImageScreen from '../../components/fullscreen'
+import FullScreenImageScreen from '../../components/Fullscreen'
 
 const RegistrationScreen = () => {
   const [email, setEmail] = useState('');
@@ -13,8 +14,8 @@ const RegistrationScreen = () => {
 
   const [error, setError] = useState('');
 
-  const {height} = useWindowDimensions();
   const {registration} = useContext(AuthContext);
+  const router = useRouter();
 
   const handleRegistration = async () => {
     setError(''); // Clear previous errors
@@ -23,12 +24,16 @@ const RegistrationScreen = () => {
     if (result && !result.success) {
       setError(result.message);
       alert(result.message);
+    } else {
+      router.replace('../(tabs)/home');
     }
   };
 
   return (
     <View style={styles.root}>
       <FullScreenImageScreen />
+
+      <Text style={{fontSize: 30, fontWeight: 'bold'}}> Register </Text>
 
       <Input
         placeholder="Email"
@@ -57,7 +62,16 @@ const RegistrationScreen = () => {
         setValue={setPassword2}
         secureTextEntry={true}
       />
-      
+
+      <Button text="Submit" onPress={handleRegistration} />
+
+      <Link href="/(auth)/login" asChild>
+        <TouchableOpacity style={styles.link}>
+        <Text>
+          Don't have an account? <Text style={styles.linkText}>Back to login?</Text>
+        </Text>
+        </TouchableOpacity>
+      </Link>
     </View>
   );
 };
