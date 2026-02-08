@@ -1,7 +1,9 @@
 import React from 'react';
-import {Text, Pressable, Image, StyleSheet} from "react-native";
+import {Text, Pressable, Image, StyleSheet, ImageBackground} from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
+
+const back_image = require("../../assets/images/image.png");
 
 export default function Index() {
     const router = useRouter();
@@ -14,6 +16,7 @@ export default function Index() {
     ];
 
     return (
+      <ImageBackground source = { back_image } style = {{flex: 1}}>
       <SafeAreaView style={styles.container}>
         <Text style={styles.title}>Main Menu</Text>
 
@@ -28,6 +31,7 @@ export default function Index() {
         ))}
 
         </SafeAreaView>
+        </ImageBackground>
     );
   }
 
