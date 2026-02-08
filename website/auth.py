@@ -30,15 +30,15 @@ def login():
 #@login_required
 def logout():
     logout_user()
-    return redirect(url_for('auth_login'))
+    return jsonify({'success': True, 'message': 'Logged out successfully'})
 
 @auth.route('/signup', methods=['GET', 'POST'])
 def sign_up():
     if request.method == 'POST':
-        email = request.form.get('email')
-        name = request.form.get('name')
-        password1 = request.form.get('password1')
-        password2 = request.form.get('password2')
+        email = request.get_json().get('email')
+        name = request.get_json().get('name')
+        password1 = request.get_json().get('password1')
+        password2 = request.get_json().get('password2')
 
         user = User.query.filter_by(email=email).first()
 
