@@ -1,8 +1,13 @@
 {
   "expo": {
-    "name": "my-app",
-    "slug": "my-app",
+    "name": "forhackathon",
+    "slug": "forhackathon",
     "version": "1.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "3e85ca49-f8cf-4981-9622-f21f13718f62"
+      }
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
