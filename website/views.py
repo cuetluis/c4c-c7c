@@ -5,7 +5,7 @@ from .models import Horse
 from random import randint, randrange
 
 views = Blueprint('views', __name__)
-
+# TODO: ENSURE LOGIN IS REQUIRED
 @views.route('/get-horse/<horse_id>', methods=['POST', 'GET'])
 def get_horse_data(horse_id):
     horse = db.session.execute(db.select(Horse).filter_by(id=horse_id)).scalar()
