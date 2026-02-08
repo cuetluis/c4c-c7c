@@ -1,18 +1,18 @@
 import React from 'react';
-import { View, Image, StyleSheet, Dimensions } from 'react-native';
+import { Image, StyleSheet, Dimensions, SafeAreaViewBase } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 const screenWidth = Dimensions.get('window').width;
+const run = require("../assets/images/hork_run.png");
 
 const FullWidthImage = () => {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Image
-        source={require('../assets/images/logo.png')}
-        // Use the full screen width and define a desired height
-        style={[styles.image, { width: screenWidth, height: 200 }]} 
-        resizeMode="stretch" // Stretches the image to fill the dimensions
+        source={run}
+        style={[styles.image, { width: screenWidth, height: 300, resizeMode: "contain" }]}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
