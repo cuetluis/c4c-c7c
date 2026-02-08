@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import DropDownPicker from 'react-native-dropdown-picker';
 import { initialFormState, breedItems } from '../../components/HorseData';
 import * as HorseService from '../../components/API';
+import { usePushNotifications } from '../../hooks/userPushNotifications'
 import {
   View,
   FlatList,
@@ -16,12 +17,35 @@ import {
   Switch,
   TouchableOpacity,
 } from "react-native";
+import Constants from 'expo-constants';
+
+async function sendPushNotification(expoPushToken) {
+  const message = {
+    to: expoPushToken,
+    sound: 'default',
+    title: 'Horse Deleted',
+    body: 'A horse has been removed from the database.',
+    data: { screen: '/horses' },
+  };
+
+  await fetch('https://exp.host/--/api/v2/push/send', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Accept-encoding': 'gzip, deflate',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(message),
+  });
+}
 
 const HorseManagementScreen = () => {
   const [data, setData] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [form, setForm] = useState(initialFormState);
   const [breedOpen, setBreedOpen] = useState(false);
+
+  const { expoPushToken, notification } = usePushNotifications();
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -68,6 +92,13 @@ const HorseManagementScreen = () => {
             setData((prev) => prev.filter((item) => item.id !== form.id));
             setModalVisible(false);
             Alert.alert("Deleted", "Horse removed successfully.");
+
+            if (expoPushToken?.data) {
+              await sendPushNotification(expoPushToken.data);
+            } else {
+              alert('No token found! Are you on a physical device?');
+            }
+            console.log(expoPushToken);
           } catch (error) {
             Alert.alert("Error", error.message);
           }
@@ -501,8 +532,8 @@ const styles = StyleSheet.create({
     color: "#444",
   },
   image: {
-    width: 50,
-    height: 50,
+    width: 100,
+    height: 100,
     resizeMode: 'cover',
     borderRadius: 25,
   },
