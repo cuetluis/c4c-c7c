@@ -6,9 +6,11 @@ from random import randint, randrange
 
 views = Blueprint('views', __name__)
 
-@views.route('/get-horse/<id>', methods=['POST', 'GET'])
-def get_horse_data(id):
-    horse = db.get_or_404(Horse, id)
+@views.route('/get-horse/<horse_id>', methods=['POST', 'GET'])
+def get_horse_data(horse_id):
+    horse = db.session.execute(db.select(Horse).filter_by(id=horse_id)).scalar()
+    if (horse is None):
+        return jsonify({})
     return jsonify(horse)
 
 @views.route('/add-horse', methods=['POST', 'GET'])
@@ -17,7 +19,7 @@ def add_horse():
     lower_bound = 1000000000
     upper_bound = 9999999999
     unique_id = randint(lower_bound, upper_bound)
-    while (db.session.query(db.session.query(Horse).filter_by(id=unique_id).exists()).scalar()):
+    while (db.session.execute(db.select(Horse).filter_by(id=unique_id)).scalar() is not None):
         unique_id = randint(lower_bound, upper_bound)
     new_horse = Horse(id=unique_id)
     db.session.add(new_horse)
