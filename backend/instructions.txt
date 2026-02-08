@@ -1,0 +1,4 @@
+This is the sequence that the programs should be run:
+
+    speech_to_text.py -> ai_search.py -> text_to_speech.py
+
