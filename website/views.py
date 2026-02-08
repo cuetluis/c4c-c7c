@@ -27,6 +27,7 @@ def get_horses():
     return jsonify([horse.to_dict() for horse in result])
 
 @views.route('/add-horse', methods=['POST'])
+@login_required
 def add_horse():
     data = request.get_json()
     if not data: return jsonify({"error": "Missing JSON body"}), 400
@@ -40,7 +41,7 @@ def add_horse():
     db.session.flush()
 
     db.session.add(AuditLog(
-        #user_id = current_user.id,
+        user_id = current_user.id,
         table_changed="horses",
         after_value=f"Created Horse ID: {new_horse.id} Name: {new_horse.name}"
     ))
@@ -49,6 +50,7 @@ def add_horse():
     return jsonify({"success": f"horse id is {new_horse.id}"})
 
 @views.route('/mutate-horse/<id>', methods=['POST'])
+@login_required
 def mutate_horse(id):
     data = request.get_json()
     if not data: return jsonify({"error": "Missing JSON body"}), 400
@@ -61,7 +63,7 @@ def mutate_horse(id):
             old_val = getattr(horse, key)
             if str(old_val) != str(val):
                 db.session.add(AuditLog(
-                    #user_id = current_user.id,
+                    user_id = current_user.id,
                     table_changed="horses",
                     field_changed=key,
                     before_value=str(old_val),
@@ -73,12 +75,15 @@ def mutate_horse(id):
     return jsonify({"success": f"horse {id} modified"})
 
 @views.route('/glue-factory/<id>', methods=['POST', 'DELETE'])
+@login_required
 def del_horse(id):
+    if current_user.admin == False:
+        return jsonify({"error": "Unauthorized"}), 403
     horse = db.session.get(Horse, id)
     if not horse: return jsonify({"error": "Not found"}), 404
 
     db.session.add(AuditLog(
-        #user_id = current_user.id,
+        user_id = current_user.id,
         table_changed="horses",
         before_value=f"ID: {id}, Name: {horse.name}",
         after_value="DELETED"
@@ -106,11 +111,12 @@ def get_observation(id):
     return jsonify(observation.to_dict())
 
 @views.route('/add-observation', methods=['POST'])
+@login_required
 def add_observation():
     data = request.get_json()
-    #TODO: ADD USER_ID FIELD
+
     obs = DailyObservation(
-        # user_id=current_user.id,
+        user_id=current_user.id,
         notes=data.get("notes"),
         to_do=data.get("to_do"),
         done=data.get("done"),
@@ -120,7 +126,7 @@ def add_observation():
     db.session.flush()
 
     db.session.add(AuditLog(
-        #user_id = current_user.id,
+        user_id = current_user.id,
         table_changed="observations",
         after_value=f"Created Observation ID: {obs.id}"
     ))
@@ -129,6 +135,7 @@ def add_observation():
     return jsonify({"success": "observation added"}), 201
 
 @views.route('/mutate-observation/<id>', methods=['POST'])
+@login_required
 def mutate_observation(id):
     data = request.get_json()
     
@@ -140,7 +147,7 @@ def mutate_observation(id):
             old_val = getattr(obs, key)
             if str(old_val) != str(val):
                 db.session.add(AuditLog(
-                    #user_id = current_user.id,
+                    user_id = current_user.id,
                     table_changed="observations",
                     field_changed=key,
                     before_value=str(old_val),
@@ -152,13 +159,17 @@ def mutate_observation(id):
     return jsonify({"success": f"observation {id} modified"})
 
 @views.route('/delete-observation/<id>', methods=['POST', 'DELETE'])
+@login_required
 def del_observation(id):
+    if current_user.admin == False:
+        return jsonify({"error": "Unauthorized"}), 403
+    
     obs = db.session.get(DailyObservation, id)
     
     if not obs: return jsonify({"error": "Not found"}), 404
 
     db.session.add(AuditLog(
-        #user_id = current_user.id,
+        user_id = current_user.id,
         table_changed="observations",
         before_value=f"ID: {id}, Note: {obs.notes[:20]}...",
         after_value="DELETED"
@@ -179,6 +190,7 @@ def get_documents(horse_id):
     return jsonify([d.to_dict() for d in results])
 
 @views.route('/add-document/<horse_id>', methods=['POST'])
+@login_required
 def add_document(horse_id):
     data = request.get_json()
     doc = Document(horse_id=horse_id)
@@ -190,7 +202,7 @@ def add_document(horse_id):
     db.session.add(doc)
     db.session.flush()
     db.session.add(AuditLog(
-        #user_id = current_user.id,
+        user_id = current_user.id,
         table_changed="horse_documents",
         after_value=f"Created Document ID: {doc.id}"
     ))
@@ -199,6 +211,7 @@ def add_document(horse_id):
     return jsonify({"success": "document added", "id": doc.id})
 
 @views.route('/mutate-document/<id>', methods=['POST'])
+@login_required
 def mutate_document(id):
     data = request.get_json()
     doc = db.session.get(Document, id)
@@ -209,7 +222,7 @@ def mutate_document(id):
             old_val = getattr(doc, key)
             if str(old_val) != str(val):
                 db.session.add(AuditLog(
-                    #user_id = current_user.id,
+                    user_id = current_user.id,
                     table_changed="horse_documents",
                     field_changed=key,
                     before_value=str(old_val),
@@ -221,12 +234,16 @@ def mutate_document(id):
     return jsonify({"success": "document updated"})
 
 @views.route('/delete-document/<id>', methods=['POST', 'DELETE'])
+@login_required
 def delete_document(id):
+    if current_user.admin == False:
+        return jsonify({"error": "Unauthorized"}), 403
+    
     doc = db.session.get(Document, id)
     if not doc: return jsonify({"error": "Not found"}), 404
 
     db.session.add(AuditLog(
-                    #user_id = current_user.id,
+                    user_id = current_user.id,
                     table_changed="horse_documents",
                     before_value=f"ID: {id}, Desc: {doc.description[:20]}...",
                     after_value="DELETED"
@@ -246,6 +263,7 @@ def get_treatments(horse_id):
     return jsonify([t.to_dict() for t in results])
 
 @views.route('/add-treatment/<horse_id>', methods=['POST'])
+@login_required
 def add_treatment(horse_id):
     data = request.get_json()
     new_treatment = Treatment(horse_id=horse_id)
@@ -258,7 +276,7 @@ def add_treatment(horse_id):
     db.session.flush()
 
     db.session.add(AuditLog(
-        #user_id = current_user.id,
+        user_id = current_user.id,
         table_changed="treatment_types",
         after_value=f"Added Treatment: {new_treatment.treatment_name} to Horse: {horse_id}"
     ))
@@ -267,6 +285,7 @@ def add_treatment(horse_id):
     return jsonify({"success": "treatment added", "id": new_treatment.id})
 
 @views.route('/mutate-treatment/<id>', methods=['POST'])
+@login_required
 def mutate_treatment(id):
     data = request.get_json()
     if not data: return jsonify({"error": "Missing JSON body"}), 400
@@ -279,7 +298,7 @@ def mutate_treatment(id):
             old_val = getattr(treatment, key)
             if str(old_val) != str(val):
                 db.session.add(AuditLog(
-                    #user_id = current_user.id,
+                    user_id = current_user.id,
                     table_changed="treatment_types",
                     field_changed=key,
                     before_value=str(old_val),
@@ -291,12 +310,16 @@ def mutate_treatment(id):
     return jsonify({"success": f"treatment {id} modified"})
 
 @views.route('/delete-treatment/<id>', methods=['POST', 'DELETE'])
+@login_required
 def delete_treatment(id):
+    if current_user.admin == False:
+        return jsonify({"error": "Unauthorized"}), 403
+    
     treatment = db.session.get(Treatment, id)
     if not treatment: return jsonify({"error": "Not found"}), 404
     
     db.session.add(AuditLog(
-        #user_id = current_user.id,
+        user_id = current_user.id,
         table_changed="treatment_types",
         before_value=f"ID: {id}, Name: {treatment.treatment_name}",
         after_value="DELETED"
@@ -317,6 +340,7 @@ def get_actions(horse_id):
     return jsonify([a.to_dict() for a in results])
 
 @views.route('/add-action/<horse_id>', methods=['POST'])
+@login_required
 def add_action(horse_id):
     data = request.get_json()
     new_action = TreatmentAction(horse_id=horse_id)
@@ -329,7 +353,7 @@ def add_action(horse_id):
     db.session.flush()
 
     db.session.add(AuditLog(
-        #user_id = current_user.id,
+        user_id = current_user.id,
         table_changed="treatment_actions",
         after_value=f"Logged {new_action.treatment_type} for horse {horse_id}"
     ))
@@ -337,6 +361,7 @@ def add_action(horse_id):
     return jsonify({"success": "Action logged"})
 
 @views.route('/mutate-action/<id>', methods=['POST'])
+@login_required
 def mutate_action(id):
     data = request.get_json()
     action = db.session.get(TreatmentAction, id)
@@ -347,7 +372,7 @@ def mutate_action(id):
             old_val = getattr(action, key)
             if str(old_val) != str(val):
                 db.session.add(AuditLog(
-                    #user_id = current_user.id,
+                    user_id = current_user.id,
                     table_changed="treatment_actions",
                     field_changed=key,
                     before_value=str(old_val),
@@ -359,12 +384,16 @@ def mutate_action(id):
     return jsonify({"success": f"action {id} modified"})
 
 @views.route('/delete-action/<id>', methods=['POST', 'DELETE'])
+@login_required
 def delete_action(id):
+    if current_user.admin == False:
+        return jsonify({"error": "Unauthorized"}), 403
+    
     action = db.session.get(TreatmentAction, id)
     if not action: return jsonify({"error": "Not found"}), 404
 
     db.session.add(AuditLog(
-        #user_id = current_user.id,
+        user_id = current_user.id,
         table_changed="treatment_actions",
         before_value=f"ID: {id}, Type: {action.treatment_type}",
         after_value="DELETED"
@@ -379,12 +408,18 @@ def delete_action(id):
 
 @views.route('/get-audits', methods=['GET'])
 def get_audits():
+    if current_user.admin == False:
+        return jsonify({"error": "Unauthorized"}), 403
+    
     stmt = db.select(AuditLog).order_by(AuditLog.updated_at.desc())
     logs = db.session.execute(stmt).scalars().all()
     return jsonify([log.to_dict() for log in logs])
 
 @views.route('/get-audit/<id>', methods=['GET'])
 def get_audit(id):
+    if current_user.admin == False:
+        return jsonify({"error": "Unauthorized"}), 403
+    
     log = db.session.get(AuditLog, id)
     if not log: 
         return jsonify({"error": f"Audit log {id} not found"}), 404
