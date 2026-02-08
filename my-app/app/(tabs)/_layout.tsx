@@ -1,5 +1,5 @@
+import { Image } from 'react-native';
 import { Tabs } from 'expo-router';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function TabLayout() {
   return (
@@ -23,12 +23,26 @@ export default function TabLayout() {
         name="home"
         options={{
           title: 'text',
-          tabBarIcon: ({ color }) => <MaterialIcons size={80} name="home" color={color} 
+          tabBarIcon: ({ color }) => <Image source={require('../../assets/images/home.png')}
+                                            style={{ width: 80, height: 80, tintColor: color }}
+                                            resizeMode="contain"
           />,
         }}
       />
       <Tabs.Screen
         name="index"
+        options={{
+          href:null
+        }}
+      />
+      <Tabs.Screen
+        name="audits"
+        options={{
+          href:null
+        }}
+      />
+      <Tabs.Screen
+        name="horses"
         options={{
           href:null
         }}
