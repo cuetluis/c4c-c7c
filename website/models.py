@@ -9,6 +9,7 @@ class User(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, default="")
+    password = db.Column(db.String, default="")
     admin = db.Column(db.Boolean, default=False)
     editor = db.Column(db.Boolean, default=False)
     viewer = db.Column(db.Boolean, default=True)

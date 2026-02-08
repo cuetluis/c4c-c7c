@@ -20,6 +20,7 @@ const LoginScreen = () => {
     
     if (result && !result.success) {
       setError(result.message);
+      alert("WOMP!")
     }
   };
 

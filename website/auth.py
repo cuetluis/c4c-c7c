@@ -35,28 +35,27 @@ def logout():
 def sign_up():
     if request.method == 'POST':
         email = request.form.get('email')
-        firstName = request.form.get('firstName')
+        name = request.form.get('name')
         password1 = request.form.get('password1')
         password2 = request.form.get('password2')
 
         user = User.query.filter_by(email=email).first()
 
         if user:
-            flash('Email already exists.', category='error')
+            response = {'message': 'Email already exists.', 'category': 'error'}
         elif len(email) < 4:
-            flash('Email must be greater than four characters.', category='error')
-        elif len(firstName) < 1:
-            flash('First name must be more than one character.', category='error')
+            response = {'message': 'Email must be greater than four characters.', 'category': 'error'}
+        elif len(name) < 1:
+            response = {'message': 'First name must be more than one character.', 'category': 'error'}
         elif len(password1) < 8:
-            flash('Password must be at least 8 characters.', category='error')
+            response = {'message': 'Password must be at least 8 characters.', 'category': 'error'}
         elif password1 != password2:
-            flash("Passwords don't match.", category='error')
+            response = {'message': 'Passwords don\'t match.', 'category': 'error'}
         else:
-            new_user = User(email=email, firstName=firstName, password = generate_password_hash(password1, method='scrypt'))
+            new_user = User(email=email, name=name, password = generate_password_hash(password1, method='scrypt'))
             db.session.add(new_user)
             db.session.commit()
-            flash('Account created!', category='success')
             login_user(current_user, remember=True)
-            return redirect(url_for('views.home'))
+            response = {'message': 'Accounted created!', 'category': 'success'}
         
-    return render_template('signup.html', user=current_user)
+    return jsonify(response)
