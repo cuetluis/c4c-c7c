@@ -19,7 +19,18 @@ export default function Index() {
         <Button
             title="Press me"
             color="#f194ff"
-            onPress={() => alert('Button with adjusted color pressed')}
+            onPress={async () => {
+                try {
+                  const response = await fetch('http://10.0.2.2:5000/get-horse/1');
+                  const json = await response.json();
+                  const alertMessage = JSON.stringify(json, null, 2);
+                  // Display the horse name in the alert
+                  alert(alertMessage);
+                } catch (error) {
+                  console.error(error);
+                  alert('Failed to fetch horse data.');
+                }
+              }}
           />
   
         <Pressable onPress={handlePress}>
