@@ -1,4 +1,0 @@
-python-dotenv
-elevenlabs.client
-elevenlabs.play
-google-generativeai
