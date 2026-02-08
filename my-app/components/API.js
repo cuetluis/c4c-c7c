@@ -1,10 +1,10 @@
 import { API_URL } from '../config/APIURL';
 
-const headers = {
+const baseHeaders = {
   'Content-Type': 'application/json',
 };
 
-export const handleResponse = async (response) => {
+const handleResponse = async (response) => {
   const text = await response.text();
   if (!response.ok) {
     throw new Error(`Server Error: ${response.status} ${text}`);
@@ -24,7 +24,8 @@ export const fetchHorses = async () => {
 export const addHorse = async (horseData) => {
   const response = await fetch(`${API_URL}/add-horse`, {
     method: 'POST',
-    headers,
+    headers: baseHeaders,
+    credentials: 'include',
     body: JSON.stringify(horseData),
   });
   return handleResponse(response);
@@ -33,7 +34,8 @@ export const addHorse = async (horseData) => {
 export const updateHorse = async (id, horseData) => {
   const response = await fetch(`${API_URL}/mutate-horse/${id}`, {
     method: 'POST',
-    headers,
+    headers: baseHeaders,
+    credentials: 'include',
     body: JSON.stringify(horseData),
   });
   return handleResponse(response);
