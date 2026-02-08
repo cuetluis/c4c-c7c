@@ -1,4 +1,5 @@
 website/__pycache__
+website/database.db
 static/
 .venv/
 package-lock.json

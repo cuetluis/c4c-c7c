@@ -14,7 +14,11 @@ def get_horse_data(id):
 @views.route('/add-horse', methods=['POST', 'GET'])
 def add_horse():
     # TODO: TAKE IN POST REQUESTS TO POPULATE FIELDS
-    unique_id = randint(1000000000, 9999999999)
+    lower_bound = 1000000000
+    upper_bound = 9999999999
+    unique_id = randint(lower_bound, upper_bound)
+    while (db.session.query(db.session.query(Horse).filter_by(id=unique_id).exists()).scalar()):
+        unique_id = randint(lower_bound, upper_bound)
     new_horse = Horse(id=unique_id)
     db.session.add(new_horse)
     db.session.commit()
