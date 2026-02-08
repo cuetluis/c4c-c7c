@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import DropDownPicker from 'react-native-dropdown-picker';
 import { initialFormState, breedItems } from '../../components/HorseData';
 import * as HorseService from '../../components/API';
-import { usePushNotifications } from '../../hooks/userPushNotifications'
+import { usePushNotifications } from '../../userPushNotifications'
 import {
   View,
   FlatList,
